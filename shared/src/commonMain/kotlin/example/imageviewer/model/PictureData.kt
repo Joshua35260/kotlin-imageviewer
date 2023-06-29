@@ -40,6 +40,17 @@ sealed interface PictureData {
         }
     }
 
+    data class WilderPictureData(
+        override val name: String,
+        override val description: String,
+        override val gps: GpsPosition,
+        override val dateString: String,
+        val imageUrl: String
+    ) : PictureData {
+        override fun toString(): String {
+            return "WilderPictureData(name='$name', description='$description', gps=$gps, dateString='$dateString', imageUrl='$imageUrl')"
+        }
+    }
 
     @Serializable
     data class Camera(

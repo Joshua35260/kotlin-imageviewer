@@ -23,12 +23,19 @@ import org.jetbrains.compose.resources.resource
 val placeholderImage: ImageBitmap = ImageBitmap(1, 1)  // Image transparente de 1 pixel
 
 suspend fun loadPicture(url: String): ImageBitmap {
-    val httpClient = HttpClient()
-    val image: ByteArray = httpClient.use { client ->
-        client.get(url).body()
+    try {
+        val httpClient = HttpClient()
+        val image: ByteArray = httpClient.use { client ->
+            client.get(url).body()
+        }
+        return image.toImageBitmap()
+    } catch (e: Exception) {
+        println("ERROR: cannot load picture $url")
+        e.printStackTrace()
+        return ImageBitmap(1, 1)
     }
-    return image.toImageBitmap()
 }
+
 @OptIn(ExperimentalResourceApi::class)
 abstract class Dependencies {
     abstract val notification: Notification
@@ -46,6 +53,15 @@ abstract class Dependencies {
                 imageStorage.getImage(picture)
             }
             is PictureData.PokemonPictureData -> {
+                val imageUrl = picture.imageUrl
+                try {
+                    loadPicture(imageUrl)
+                } catch (e: Exception) {
+                    println("Failed to download image: ${e.message}")
+                    placeholderImage
+                }
+            }
+            is PictureData.WilderPictureData -> {
                 val imageUrl = picture.imageUrl
                 try {
                     loadPicture(imageUrl)
@@ -72,6 +88,15 @@ abstract class Dependencies {
                 } catch (e: Exception) {
                     e.printStackTrace()
                     // Return a placeholder image or a default image for missing images
+                    placeholderImage
+                }
+            }
+            is PictureData.WilderPictureData -> {
+                val imageUrl = picture.imageUrl
+                try {
+                    loadPicture(imageUrl)
+                } catch (e: Exception) {
+                    println("Failed to download image: ${e.message}")
                     placeholderImage
                 }
             }
@@ -118,10 +143,16 @@ abstract class Dependencies {
                 pictures[pictures.indexOf(picture)] = edited
                 edited
             }
-            else -> {
-                throw IllegalArgumentException("Unsupported picture type: ${picture::class.simpleName}")
-            }
-        }
+             is PictureData.WilderPictureData -> {
+                 val edited = picture.copy(
+                     name = name,
+                     description = description,
+                 )
+                 pictures[pictures.indexOf(picture)] = edited
+                 edited
+             }
+         }
+
     }
     init {
         println("init Application Dependencies")
@@ -139,12 +170,28 @@ abstract class Dependencies {
                 }
                 pictures.addAll(pokemonPictures)
                 println(">>>>> Pokemons $pokemons")
+
+                val wildstagramPictures = WildstagramService().getAll()
+                val wildstagramPictureData = wildstagramPictures.map { wildstagramPicture ->
+                    PictureData.WilderPictureData(
+                        name = wildstagramPicture.name,
+                        description = "Description du Wilder Picture",
+                        gps = GpsPosition(0.0, 0.0),
+                        dateString = "Date",
+                        imageUrl = wildstagramPicture.imageUrl
+                    )
+                }
+                pictures.addAll(wildstagramPictureData)
+                println(">>>>> Wildstagram Pictures $wildstagramPictureData")
             } catch (e: Exception) {
                 e.printStackTrace()
-                println("ERROR : $e")
+                println("ERROR: $e")
             }
         }
     }
+
+
+
 
 
 }

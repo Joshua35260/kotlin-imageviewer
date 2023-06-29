@@ -3,6 +3,8 @@ package example.imageviewer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -49,3 +51,7 @@ actual val ioDispatcher = Dispatchers.IO
 actual val isShareFeatureSupported: Boolean = true
 
 actual val shareIcon: ImageVector = IconIosShare
+actual fun ImageBitmap.toByteArray(): ByteArray {
+    val r = this.asSkiaBitmap().readPixels()
+    return r ?: ByteArray(0)
+}
